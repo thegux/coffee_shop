@@ -43,16 +43,30 @@ def get_drinks_detailed(jwt):
 @requires_auth('post:drinks')
 def create_drink(jwt):
     request_value = request.get_json()
+
+    if request_value is None:
+        abort(400)
+
+    if request_value['title'] is None or request_value['recipe'] is None:
+        abort(400)
+
     drink = Drink(
         title=request_value['title'],
         recipe=json.dumps(request_value['recipe'])
     )
-    Drink.insert(drink)
-    return jsonify({
-        'success': True,
-        'status_code': 200,
-        'drinks': [drink.long()]
-    })
+    try: 
+        Drink.insert(drink)
+        return jsonify({
+            'success': True,
+            'status_code': 200,
+            'drinks': [drink.long()]
+        })
+    except:
+        return jsonify({
+            'success': False,
+            'status_code': 400,
+            'message': 'There was a problem saving this drink. Please try again with another drink name.'
+        })
 
 
 
@@ -60,20 +74,30 @@ def create_drink(jwt):
 @requires_auth('patch:drinks')
 def update_drinks(jwt, drink_id):
     data = request.get_json()
-    drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+    if data['title'] is None or data['recipe'] is None:
+        abort(400)
 
+    drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+    
     if drink is None:
         abort(404)
     
     drink.title = data['title']
     drink.recipe = json.dumps(data['recipe'])
-    drink.update()
+    try:
+        drink.update()
+        return jsonify({
+            'status_code': 200,
+            'success': True,
+            'drinks': [drink.long()]
+        })
+    except:
+        return jsonify({
+            'success': False,
+            'status_code': 400,
+            'message': 'There was a problem updating this drink. Please try again with another drink name.'
+        })
 
-    return jsonify({
-        'status_code': 200,
-        'success': True,
-        'drinks': [drink.long()]
-    })
 
 @app.route('/drinks/<int:drink_id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
@@ -95,6 +119,14 @@ def delete_drink(jwt, drink_id):
 '''
 Example error handling for unprocessable entity
 '''
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+                    "success": False, 
+                    "error": 400,
+                    "message": "bad request"
+                    }), 400
+
 @app.errorhandler(422)
 def unprocessable(error):
     return jsonify({

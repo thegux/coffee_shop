@@ -27,7 +27,10 @@ class AuthError(Exception):
 
 def get_token_auth_header():
     if 'Authorization' not in request.headers:
-        abort(401)
+        raise AuthError({
+            'code': 'User not allowed to perform this operation',
+            'description': 'Not Authorized.'
+        }, 401)
 
     auth_header = request.headers['Authorization']
     header_parts = auth_header.split(' ')
@@ -57,7 +60,7 @@ def check_permissions(permission, payload):
 def verify_decode_jwt(token):
     jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
     jwks = json.loads(jsonurl.read())
-    
+
     unverified_header = jwt.get_unverified_header(token)
     rsa_key = {}
 
