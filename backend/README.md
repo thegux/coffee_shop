@@ -1,7 +1,5 @@
 # Coffee Shop Backend
 
-# Full Stack Trivia API Backend
-
 ## Getting Started
 
 ### Pre-requisites
